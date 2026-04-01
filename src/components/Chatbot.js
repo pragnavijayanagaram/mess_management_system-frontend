@@ -8,7 +8,7 @@ function Chatbot() {
     ]);
     const [input, setInput] = useState("");
     const messagesEndRef = useRef(null);
-    const location = useLocation();
+    
 
     // Scroll to bottom when messages update
     useEffect(() => {
