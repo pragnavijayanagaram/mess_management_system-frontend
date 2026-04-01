@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
 function Admin(){
@@ -8,7 +8,8 @@ function Admin(){
     const [filter, setFilter] = useState("ALL");
     const navigate = useNavigate();
 
-    const fetchOrders = async () => {
+    // Wrapped in useCallback to prevent infinite re-renders and satisfy ESLint
+    const fetchOrders = useCallback(async () => {
         const token = localStorage.getItem("token");
         if (!token) return;
         try {
@@ -25,14 +26,14 @@ function Admin(){
         } catch(error) {
             console.error("Error fetching admin orders", error);
         }
-    };
+    }, [navigate]);
 
     useEffect(() => {
         fetchOrders();
         // Auto-refresh orders every 5 seconds
         const interval = setInterval(fetchOrders, 5000);
         return () => clearInterval(interval);
-    }, [navigate]);
+    }, [fetchOrders]); // Added fetchOrders to dependencies
 
     const addFood = async () => {
         const token = localStorage.getItem("token");
@@ -103,7 +104,7 @@ function Admin(){
 
                 {/* Right Panel: Orders */}
                 <div style={{flex: "2", backgroundColor: "#fff", padding: "20px", borderRadius: "8px", border: "1px solid #ddd"}}>
-                    <div style={{display: "flex", justifyContents: "space-between", alignItems: "center", marginBottom: "15px"}}>
+                    <div style={{display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px"}}>
                         <h3 style={{flex: 1}}>📜 Order Management</h3>
                         <select style={{padding: "8px", borderRadius: "4px", marginLeft: "auto"}} value={filter} onChange={e => setFilter(e.target.value)}>
                             <option value="ALL">All Orders (Today)</option>
@@ -149,8 +150,8 @@ function Admin(){
                                             </button>
                                         )}
                                         {order.status === "READY FOR PICKUP" && (
-                                            <button onClick={() => updateStatus(order.id, "COMPLETED")} style={{padding: "8px 15px", backgroundColor: "#28a745", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold"}}>
-                                                Mark Completed ✓
+                                            <button onClick={() => updateStatus(order.id, "COMPLETED")} style={{padding: "8px 15px", backgroundColor: "green", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold"}}>
+                                                Complete Order
                                             </button>
                                         )}
                                     </div>
