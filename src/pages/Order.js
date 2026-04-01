@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
 function Orders(){
@@ -6,7 +6,8 @@ function Orders(){
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
-    const fetchOrders = async () => {
+    // Wrapped in useCallback to prevent infinite re-renders and satisfy ESLint
+    const fetchOrders = useCallback(async () => {
         const clientId = localStorage.getItem("clientId");
         const token = localStorage.getItem("token");
 
@@ -25,13 +26,20 @@ function Orders(){
                 
                 // Notification logic: Alert once when order becomes "READY FOR PICKUP"
                 const notifiedOrders = JSON.parse(localStorage.getItem("notifiedOrders")) || [];
+                let updatedNotified = [...notifiedOrders];
+                let shouldUpdateStorage = false;
+
                 data.forEach(order => {
                     if (order.status === "READY FOR PICKUP" && !notifiedOrders.includes(order.id)) {
                         alert(`🔔 Your order #${order.id} is READY FOR PICKUP!`);
-                        notifiedOrders.push(order.id);
+                        updatedNotified.push(order.id);
+                        shouldUpdateStorage = true;
                     }
                 });
-                localStorage.setItem("notifiedOrders", JSON.stringify(notifiedOrders));
+
+                if (shouldUpdateStorage) {
+                    localStorage.setItem("notifiedOrders", JSON.stringify(updatedNotified));
+                }
                 
                 setOrders(data.sort((a,b)=>b.id-a.id));
             } else if (res.status === 401) {
@@ -42,13 +50,13 @@ function Orders(){
         } finally {
             setLoading(false);
         }
-    };
+    }, [navigate]);
 
     useEffect(() => {
         fetchOrders();
         const intId = setInterval(fetchOrders, 3000);
         return () => clearInterval(intId);
-    }, [navigate]);
+    }, [fetchOrders]); // Added fetchOrders to dependencies
 
     if (loading) {
         return <div style={{padding: "20px"}}><h2>Loading orders...</h2></div>;
